@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cotizador — Seguros Soledad Sáenz</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: system-ui, -apple-system, sans-serif; background: #f4f4f6; color: #111; font-size: 14px; }
+
+  /* Header */
+  .header { background: #fff; border-bottom: 2px solid #00CCCC; padding: 12px 24px; display: flex; align-items: center; gap: 16px; position: sticky; top: 0; z-index: 100; }
+  .header img { height: 40px; }
+  .header h1 { font-size: 15px; font-weight: 600; color: #111; }
+  .header span { font-size: 12px; color: #a955b3; }
+
+  /* Steps */
+  .steps { display: flex; background: #fff; border-bottom: 1px solid #e5e5e5; padding: 0 24px; }
+  .step-item { flex: 1; text-align: center; padding: 10px 0; font-size: 12px; color: #999; border-bottom: 2px solid transparent; cursor: default; }
+  .step-item.active { color: #185FA5; border-bottom-color: #185FA5; font-weight: 600; }
+  .step-item.done { color: #0F6E56; border-bottom-color: #5DCAA5; }
+
+  /* Layout */
+  .container { max-width: 900px; margin: 24px auto; padding: 0 16px; }
+  .card { background: #fff; border: 1px solid #e5e5e5; border-radius: 12px; padding: 20px 24px; margin-bottom: 16px; }
+  .card-title { font-size: 11px; font-weight: 600; color: #a955b3; text-transform: uppercase; letter-spacing: .06em; margin-bottom: 14px; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+  .field { display: flex; flex-direction: column; gap: 4px; }
+  .field label { font-size: 12px; color: #777; }
+  .field input, .field select { border: 1px solid #ddd; border-radius: 8px; padding: 8px 10px; font-size: 13px; outline: none; transition: border-color .15s; }
+  .field input:focus, .field select:focus { border-color: #a955b3; }
+
+  /* Actions */
+  .actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }
+  .btn { border: 1px solid #ddd; background: #fff; color: #444; border-radius: 8px; padding: 9px 20px; font-size: 13px; cursor: pointer; transition: background .15s; }
+  .btn:hover { background: #f5f5f5; }
+  .btn-primary { background: #a955b3; color: #fff; border-color: #a955b3; }
+  .btn-primary:hover { background: #9244a0; }
+  .btn-pdf { background: #111; color: #fff; border-color: #111; }
+  .btn-pdf:hover { background: #333; }
+
+  .hidden { display: none !important; }
+
+  /* Aseguradoras */
+  .aseg-card { background: #fff; border: 1px solid #e5e5e5; border-radius: 12px; margin-bottom: 14px; overflow: hidden; }
+  .aseg-header { padding: 12px 16px; background: #fafafa; border-bottom: 1px solid #e5e5e5; display: flex; align-items: center; justify-content: space-between; }
+  .aseg-nombre { font-weight: 600; font-size: 14px; }
+  .aseg-badge { font-size: 11px; padding: 3px 10px; border-radius: 99px; font-weight: 600; }
+  .plan-row { display: grid; grid-template-columns: 1fr auto auto auto; align-items: center; gap: 12px; padding: 12px 16px; border-bottom: 1px solid #f0f0f0; }
+  .plan-row:last-child { border-bottom: none; }
+  .plan-nombre { font-weight: 600; font-size: 13px; }
+  .plan-desc { font-size: 11px; color: #888; margin-top: 2px; }
+  .plan-ded { font-size: 10px; color: #aaa; margin-top: 3px; }
+  .prima-anual { font-size: 16px; font-weight: 700; color: #a955b3; text-align: right; }
+  .prima-mes { font-size: 11px; color: #666; text-align: right; }
+  .btn-select { background: #edf4ff; color: #185FA5; border: none; border-radius: 8px; padding: 6px 14px; font-size: 12px; font-weight: 600; cursor: pointer; white-space: nowrap; }
+  .btn-select:hover { background: #dbeafe; }
+  .cob-toggle { font-size: 11px; color: #a955b3; cursor: pointer; padding: 6px 16px; display: block; background: #fdf5fe; }
+  .cob-detail { padding: 8px 16px 12px; display: none; }
+  .cob-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  .cob-table td { padding: 4px 0; border-bottom: 1px solid #f0f0f0; color: #555; }
+  .cob-table td:last-child { text-align: right; font-weight: 600; color: #111; }
+  .cob-table tr:last-child td { border-bottom: none; }
+  .highlighted { border: 2px solid #a955b3 !important; }
+
+  /* Resumen */
+  .resumen-row { display: flex; justify-content: space-between; font-size: 13px; padding: 6px 0; border-bottom: 1px solid #f0f0f0; }
+  .resumen-row:last-child { border-bottom: none; }
+  .resumen-row span:first-child { color: #888; }
+  .resumen-total { font-size: 20px; font-weight: 700; color: #a955b3; }
+  .resumen-mes { font-size: 13px; color: #555; font-weight: 600; }
+
+  /* Badges */
+  .badge-economico    { background: #E8F5E9; color: #2E7D32; }
+  .badge-cobertura    { background: #F3E5F5; color: #6A1B9A; }
+  .badge-deducible    { background: #E3F2FD; color: #1565C0; }
+  .badge-flexibilidad { background: #FFF8E1; color: #E65100; }
+  .badge-tecnologia   { background: #E0F7FA; color: #00695C; }
+
+  /* Vehículo resumen pill */
+  .vehiculo-pill { display: inline-flex; gap: 16px; background: #f9f0fb; border: 1px solid #e8c9ef; border-radius: 8px; padding: 8px 16px; margin-bottom: 16px; font-size: 13px; flex-wrap: wrap; }
+  .vehiculo-pill strong { color: #a955b3; }
+
+  /* Loading overlay */
+  .loading { position: fixed; inset: 0; background: rgba(0,0,0,.4); display: flex; align-items: center; justify-content: center; z-index: 999; }
+  .loading-box { background: #fff; border-radius: 12px; padding: 32px 40px; text-align: center; }
+  .loading-box p { margin-top: 12px; font-size: 14px; color: #555; }
+  .spinner { width: 36px; height: 36px; border: 3px solid #f0e0f7; border-top-color: #a955b3; border-radius: 50%; animation: spin .7s linear infinite; margin: 0 auto; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <img src="/logo.png" alt="Seguros Soledad Sáenz">
+  <div>
+    <h1>Cotizador de seguros vehiculares</h1>
+    <span>Herramienta interna · Seguros Soledad Sáenz</span>
+  </div>
+</div>
+
+<div class="steps">
+  <div class="step-item active" id="s1">1. Cliente y vehículo</div>
+  <div class="step-item" id="s2">2. Comparar opciones</div>
+  <div class="step-item" id="s3">3. Resumen y PDF</div>
+</div>
+
+<div class="container">
+
+  <!-- ── PASO 1 ── -->
+  <div id="paso1">
+    <div class="card">
+      <div class="card-title">Datos del cliente</div>
+      <div class="grid2">
+        <div class="field"><label>Nombre completo</label><input id="nombre" placeholder="Ej. Veronica Tobar Taylor"></div>
+        <div class="field"><label>Cédula / Pasaporte</label><input id="cedula" placeholder="1713919841"></div>
+        <div class="field"><label>Teléfono</label><input id="telefono" placeholder="+593 98..."></div>
+        <div class="field"><label>Correo electrónico</label><input id="correo" placeholder="cliente@email.com"></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Datos del vehículo</div>
+      <div class="grid3">
+        <div class="field"><label>Placa</label><input id="placa" placeholder="PFB-7622"></div>
+        <div class="field"><label>Marca</label><input id="marca" placeholder="NISSAN"></div>
+        <div class="field"><label>Modelo</label><input id="modelo" placeholder="ROGUE"></div>
+        <div class="field"><label>Año</label><input id="anio" type="number" placeholder="2020" min="2000" max="2030"></div>
+        <div class="field"><label>Tipo</label>
+          <select id="tipo"><option>JEEP / SUV</option><option>Sedán</option><option>Camioneta</option><option>Hatchback</option></select>
+        </div>
+        <div class="field"><label>Uso</label>
+          <select id="uso"><option>PERSONAL</option><option>Comercial</option><option>Transporte</option></select>
+        </div>
+      </div>
+      <div class="grid2" style="margin-top:12px">
+        <div class="field"><label>Valor comercial (USD)</label><input id="valor" type="number" placeholder="24000"></div>
+        <div class="field"><label>Valor extras (USD)</label><input id="extras" type="number" placeholder="0" value="0"></div>
+      </div>
+    </div>
+    <div class="actions">
+      <button class="btn btn-primary" onclick="irPaso2()">Ver opciones →</button>
+    </div>
+  </div>
+
+  <!-- ── PASO 2 ── -->
+  <div id="paso2" class="hidden">
+    <div id="vehiculo-pill-wrap"></div>
+    <div id="aseguradoras-wrap"></div>
+    <div class="actions">
+      <button class="btn" onclick="irPaso(1)">← Editar datos</button>
+    </div>
+  </div>
+
+  <!-- ── PASO 3 ── -->
+  <div id="paso3" class="hidden">
+    <div class="card">
+      <div class="card-title">Resumen de cotización</div>
+      <div id="resumen-final"></div>
+    </div>
+    <div class="actions">
+      <button class="btn" onclick="irPaso(2)">← Cambiar selección</button>
+      <button class="btn btn-pdf" onclick="generarPDF()">Descargar PDF</button>
+    </div>
+  </div>
+
+</div>
+
+<!-- Loading -->
+<div class="loading hidden" id="loading">
+  <div class="loading-box">
+    <div class="spinner"></div>
+    <p>Generando propuesta PDF...</p>
+  </div>
+</div>
+
+<script>
+const IVA = 0.15;
+
+const ASEGURADORAS = [
+  {
+    id:'aig', nombre:'AIG Metropolitana', badge:'Full + 2 alternativas', badgeClass:'badge-cobertura',
+    planes:[
+      { id:'aig-full', nombre:'Full Cobertura', desc:'Daños parciales/totales, robo, RC $40k, MetroAssit',
+        ventaja_texto:'Mayor cobertura total', ventaja_tipo:'cobertura',
+        prima_total:985.93, rc:'$40.000', parcial:true, total:true, auto_sust:'15/30 días',
+        deducible_corto:'10% VS / mín $250',
+        deducible:'Parciales: 10% VS / 1% VA / mín $250 (el mayor). Total daños: 15% VA. Total robo: 15-20% VA según dispositivo.',
+        asistencias:'Auxilio mecánico · Remolque · Avería leve · Descarga batería · Ángel Guardián · Traslado ambulancia · Red talleres KPG · Asistencia legal 24/7 · No cobro R.A.S.A.',
+        coberturas:[['RC – límite único combinado','$40.000'],['Pérdida parcial por daños','$24.000'],['Pérdida total por daños','$24.000'],['Pérdida parcial por robo','$24.000'],['Pérdida total por robo','$24.000'],['Gastos médicos por ocupante','$3.000'],['Accidentes personales por ocupante','$5.000'],['Grúa y transporte','$300'],['Amparo jurídico','$1.000'],['Muerte accidental / Incapacidad total','$10.000'],['Llave protegida','$150'],['Documentos protegidos','$100'],['Auto sustituto parciales','15 días/evento'],['Auto sustituto totales','30 días'],['Asistencias MetroAssit','Incluido'],['Amparo patrimonial','$24.000']]},
+      { id:'aig-pt', nombre:'Pérdida Total', desc:'Solo pérdidas totales + RC + asistencias',
+        ventaja_texto:'Cobertura esencial', ventaja_tipo:'deducible',
+        prima_total:479.12, rc:'$40.000', parcial:false, total:true, auto_sust:'30 días',
+        deducible_corto:'15% VA',
+        deducible:'Total daños/robo: 15% VA. Aplica política de dispositivo.',
+        asistencias:'Asistencias AIG MetroAssit · Grúa y transporte.',
+        coberturas:[['RC – límite único combinado','$40.000'],['Pérdida total por daños','$24.000'],['Pérdida total por robo','$24.000'],['Gastos médicos por ocupante','$3.000'],['Accidentes personales por ocupante','$5.000'],['Grúa y transporte','$300'],['Amparo jurídico','$1.000'],['Auto sustituto totales','30 días'],['Amparo patrimonial','$24.000']]},
+      { id:'aig-rc', nombre:'Responsabilidad Civil', desc:'Solo RC + asistencias básicas',
+        ventaja_texto:'Más económico AIG', ventaja_tipo:'economico',
+        prima_total:179.98, rc:'$40.000', parcial:false, total:false, auto_sust:'—',
+        deducible_corto:'No aplica',
+        deducible:'No aplica deducible.',
+        asistencias:'Asistencias AIG MetroAssit.',
+        coberturas:[['RC – límite único combinado','$40.000'],['Gastos médicos por ocupante','$3.000'],['Accidentes personales por ocupante','$5.000'],['Grúa y transporte','$300'],['Amparo jurídico','$1.000'],['Llave protegida','$150'],['Documentos protegidos','$100']]}
+    ]
+  },
+  {
+    id:'km', nombre:'AIG por Kilómetro', badge:'Pago por uso', badgeClass:'badge-economico',
+    planes:[
+      {id:'km-900',  nombre:'900 km – 3 meses',  desc:'Full cobertura · 90 días',  ventaja_texto:'Pagas lo que recorres', ventaja_tipo:'economico', prima_total:118.08, rc:'$40.000', parcial:true, total:true, auto_sust:'10/20 días', deducible_corto:'10% VS / mín $250', deducible:'Parciales: 10% VS / 1% VA / mín $250. Total: 15% VA.', asistencias:'Asistencia vial 24h · Ángel Guardián · APP de servicios · Red talleres KPG.', coberturas:[['Duración','90 días'],['Kilómetros','900 km'],['RC','$40.000'],['Pérdida parcial / total daños','$24.000'],['Pérdida parcial / total robo','$24.000'],['Gastos médicos','$3.000'],['Accidentes personales','$5.000'],['Auto sustituto parciales','10 días'],['Auto sustituto totales','20 días']]},
+      {id:'km-1500', nombre:'1.500 km – 4 meses', desc:'Full cobertura · 120 días', ventaja_texto:'Pagas lo que recorres', ventaja_tipo:'economico', prima_total:157.19, rc:'$40.000', parcial:true, total:true, auto_sust:'10/20 días', deducible_corto:'10% VS / mín $250', deducible:'Parciales: 10% VS / 1% VA / mín $250. Total: 15% VA.', asistencias:'Asistencia vial 24h · Ángel Guardián · APP de servicios.', coberturas:[['Duración','120 días'],['Kilómetros','1.500 km'],['RC','$40.000'],['Pérdida parcial / total','$24.000'],['Gastos médicos','$3.000'],['Accidentes personales','$5.000']]},
+      {id:'km-3000', nombre:'3.000 km – 5 meses', desc:'Full cobertura · 150 días', ventaja_texto:'Pagas lo que recorres', ventaja_tipo:'economico', prima_total:251.41, rc:'$40.000', parcial:true, total:true, auto_sust:'10/20 días', deducible_corto:'10% VS / mín $250', deducible:'Parciales: 10% VS / 1% VA / mín $250. Total: 15% VA.', asistencias:'Asistencia vial 24h · APP de servicios.', coberturas:[['Duración','150 días'],['Kilómetros','3.000 km'],['RC','$40.000'],['Pérdida parcial / total','$24.000'],['Gastos médicos','$3.000'],['Accidentes personales','$5.000']]},
+      {id:'km-5000', nombre:'5.000 km – 6 meses', desc:'Full cobertura · 180 días', ventaja_texto:'Pagas lo que recorres', ventaja_tipo:'economico', prima_total:376.82, rc:'$40.000', parcial:true, total:true, auto_sust:'10/20 días', deducible_corto:'10% VS / mín $250', deducible:'Parciales: 10% VS / 1% VA / mín $250. Total: 15% VA.', asistencias:'Asistencia vial 24h · APP de servicios.', coberturas:[['Duración','180 días'],['Kilómetros','5.000 km'],['RC','$40.000'],['Pérdida parcial / total','$24.000'],['Gastos médicos','$3.000'],['Accidentes personales','$5.000']]},
+      {id:'km-7500', nombre:'7.500 km – 9 meses', desc:'Full cobertura · 270 días', ventaja_texto:'Pagas lo que recorres', ventaja_tipo:'economico', prima_total:537.01, rc:'$40.000', parcial:true, total:true, auto_sust:'10/20 días', deducible_corto:'10% VS / mín $250', deducible:'Parciales: 10% VS / 1% VA / mín $250. Total: 15% VA.', asistencias:'Asistencia vial 24h · APP de servicios.', coberturas:[['Duración','270 días'],['Kilómetros','7.500 km'],['RC','$40.000'],['Pérdida parcial / total','$24.000'],['Gastos médicos','$3.000'],['Accidentes personales','$5.000']]},
+      {id:'km-10000',nombre:'10.000 km – 12 meses',desc:'Full cobertura · 360 días', ventaja_texto:'Pagas lo que recorres', ventaja_tipo:'economico', prima_total:699.51, rc:'$40.000', parcial:true, total:true, auto_sust:'10/20 días', deducible_corto:'10% VS / mín $250', deducible:'Parciales: 10% VS / 1% VA / mín $250. Total: 15% VA.', asistencias:'Asistencia vial 24h · APP de servicios.', coberturas:[['Duración','360 días'],['Kilómetros','10.000 km'],['RC','$40.000'],['Pérdida parcial / total','$24.000'],['Gastos médicos','$3.000'],['Accidentes personales','$5.000']]}
+    ]
+  },
+  {
+    id:'sur', nombre:'Sur One – Aseguradora del Sur', badge:'3 planes', badgeClass:'badge-flexibilidad',
+    planes:[
+      {id:'sur-bronce', nombre:'Plan Bronce', desc:'Solo pérdidas totales y RC $30k', ventaja_texto:'Entrada económica', ventaja_tipo:'economico', prima_total:640.80, rc:'$30.000', parcial:false, total:true, auto_sust:'—', deducible_corto:'No aplica parciales', deducible:'Parciales: no aplica. Total robo: 20% VA. Total daños: 15% VA.', asistencias:'Grúa · Auxilio vial · Cambio de llanta · Combustible · Cerrajería vial · Asistencia legal.', coberturas:[['RC','$30.000'],['Pérdida total daños/robo','$24.000'],['Muerte accidental por ocupante','$5.000'],['Sepelio por ocupante','$500'],['Gastos médicos (ded. $40)','$2.500'],['Asistencias viales','Incluido']]},
+      {id:'sur-plata', nombre:'Plan Plata', desc:'Full cobertura · diferible 12 meses sin intereses', ventaja_texto:'Diferible 12 meses sin intereses', ventaja_tipo:'flexibilidad', prima_total:1080.00, rc:'$40.000', parcial:true, total:true, auto_sust:'15/30 días', deducible_corto:'$400 fijo', deducible:'Parciales: $400 fijo. Total daños: 15% VA. Total robo: 20% VA.', asistencias:'Grúa · Auxilio vial · Paso de corriente · Cambio de llanta · Combustible · Cerrajería vial · Lavado express 1x/año · Asistencia legal.', coberturas:[['RC','$40.000'],['Pérdida parcial daños/robo','$24.000'],['Pérdida total daños/robo','$24.000'],['Muerte accidental por ocupante','$5.000'],['Invalidez por ocupante','$5.000'],['Sepelio por ocupante','$500'],['Gastos médicos (ded. $40)','$2.500'],['Radio y parlantes','$1.500'],['Auto sustituto parciales (> $1.550)','15 días'],['Auto sustituto totales','30 días'],['Amparo patrimonial','Incluido']]},
+      {id:'sur-oro',   nombre:'Plan Oro',   desc:'Full premium · RC $50k · rastreo incluido', ventaja_texto:'RC $50k + rastreo', ventaja_tipo:'cobertura', prima_total:1437.84, rc:'$50.000', parcial:true, total:true, auto_sust:'15/30 días', deducible_corto:'$400 fijo / robo 10%', deducible:'Parciales: $400 fijo. Total daños: 15% VA. Total robo: 10% VA.', asistencias:'Todas las de Plata + Rastreo vehicular + Bloqueo de motor + Historial de viajes.', coberturas:[['RC','$50.000'],['Pérdida parcial daños/robo','$24.000'],['Pérdida total daños/robo','$24.000'],['Muerte accidental por ocupante','$7.000'],['Invalidez por ocupante','$7.000'],['Sepelio por ocupante','$700'],['Gastos médicos (ded. $40)','$3.000'],['Radio y parlantes','$1.500'],['Auto sustituto','Incluido'],['Rastreo + bloqueo de motor','Incluido'],['Historial de viajes','Incluido']]}
+    ]
+  },
+  {
+    id:'equi', nombre:'Equisuiza', badge:'RC $80.000', badgeClass:'badge-cobertura',
+    planes:[
+      {id:'equi-full', nombre:'Autoseguro Amparo Patrimonial', desc:'Full cobertura · RC $80k · amparo patrimonial', ventaja_texto:'RC más alta: $80.000', ventaja_tipo:'cobertura', prima_total:864.57, rc:'$80.000', parcial:true, total:true, auto_sust:'10/20 días', deducible_corto:'Taller convenio mín $200', deducible:'Taller convenio: 10%/1%VA/mín $200. Concesionario ≤2 años: mín $350. Concesionario >2 años: mín $400. Sin convenio: mín $400. Robo sin disp. >$30k: 20% VA.', asistencias:'Conductor profesional sin límite · Ambulancia sin límite · Grúa 24/7 200km/3 eventos · Asistencia legal in situ · Reemplazo de llaves máx $200 · Gastos exequiales titular · Médica telefónica 24/7.', coberturas:[['RC – daños a terceros','$80.000'],['Pérdida parcial/total por choque','Incluido'],['Pérdida parcial/total por robo','Incluido'],['Gastos médicos por ocupante','$3.000'],['Muerte accidental por ocupante','$5.000'],['Amparo patrimonial','Incluido'],['Auto sustituto parciales (> $1.300)','10 días'],['Auto sustituto totales','20 días'],['Reemplazo de llaves por robo','máx $200'],['Gastos exequiales titular','Incluido'],['Asistencia médica 24/7','Incluido']]}
+    ]
+  }
+];
+
+let seleccion = null;
+let datosCliente = {};
+
+function irPaso(n) {
+  ['paso1','paso2','paso3'].forEach((id,i) => document.getElementById(id).classList.toggle('hidden', i !== n-1));
+  ['s1','s2','s3'].forEach((id,i) => {
+    const el = document.getElementById(id);
+    el.className = 'step-item';
+    if (i+1 < n) el.classList.add('done');
+    else if (i+1 === n) el.classList.add('active');
+  });
+}
+
+function fmtPrima(p) { return '$' + (p*(1+IVA)).toLocaleString('es-EC',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+function fmtMes(p)   { return '$' + (p*(1+IVA)/12).toLocaleString('es-EC',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+
+function irPaso2() {
+  datosCliente = {
+    nombre: document.getElementById('nombre').value||'—',
+    cedula: document.getElementById('cedula').value||'—',
+    telefono: document.getElementById('telefono').value||'',
+    correo: document.getElementById('correo').value||'',
+    placa: document.getElementById('placa').value||'—',
+    marca: document.getElementById('marca').value||'—',
+    modelo: document.getElementById('modelo').value||'—',
+    anio: document.getElementById('anio').value||'—',
+    tipo: document.getElementById('tipo').value,
+    uso: document.getElementById('uso').value,
+    valor: parseFloat(document.getElementById('valor').value)||0,
+  };
+
+  document.getElementById('vehiculo-pill-wrap').innerHTML = `
+    <div class="vehiculo-pill">
+      <span><strong>Cliente:</strong> ${datosCliente.nombre}</span>
+      <span><strong>Vehículo:</strong> ${datosCliente.marca} ${datosCliente.modelo} ${datosCliente.anio}</span>
+      <span><strong>Placa:</strong> ${datosCliente.placa}</span>
+      <span><strong>Valor:</strong> $${datosCliente.valor.toLocaleString()}</span>
+    </div>`;
+
+  const wrap = document.getElementById('aseguradoras-wrap');
+  wrap.innerHTML = '';
+  ASEGURADORAS.forEach(aseg => {
+    const planesHTML = aseg.planes.map(p => {
+      const cobHTML = p.coberturas.map(c=>`<tr><td>${c[0]}</td><td>${c[1]}</td></tr>`).join('');
+      return `
+        <div class="plan-row" id="planrow-${p.id}">
+          <div>
+            <div class="plan-nombre">${p.nombre}</div>
+            <div class="plan-desc">${p.desc}</div>
+            <div class="plan-ded">Ded.: ${p.deducible_corto}</div>
+          </div>
+          <div style="text-align:right">
+            <div class="prima-anual">${fmtPrima(p.prima_total)}</div>
+            <div class="prima-mes">${fmtMes(p.prima_total)}/mes × 12</div>
+          </div>
+          <span class="aseg-badge ${p.ventaja_tipo ? 'badge-'+p.ventaja_tipo : ''}" style="font-size:11px">${p.ventaja_texto}</span>
+          <button class="btn-select" onclick="seleccionar('${aseg.id}','${aseg.nombre}','${p.id}','${p.nombre}',${p.prima_total},'${p.ventaja_texto}','${p.ventaja_tipo}')">Seleccionar</button>
+        </div>
+        <span class="cob-toggle" onclick="toggleCob('cob-${p.id}',this)">+ ver coberturas</span>
+        <div class="cob-detail" id="cob-${p.id}">
+          <table class="cob-table"><tbody>${cobHTML}</tbody></table>
+          ${p.asistencias ? `<div style="font-size:11px;color:#888;margin-top:8px"><strong style="color:#555">Asistencias:</strong> ${p.asistencias}</div>` : ''}
+        </div>`;
+    }).join('');
+
+    wrap.innerHTML += `
+      <div class="aseg-card" id="card-${aseg.id}">
+        <div class="aseg-header">
+          <span class="aseg-nombre">${aseg.nombre}</span>
+          <span class="aseg-badge ${aseg.badgeClass}">${aseg.badge}</span>
+        </div>
+        ${planesHTML}
+      </div>`;
+  });
+  irPaso(2);
+}
+
+function toggleCob(id, el) {
+  const d = document.getElementById(id);
+  const vis = d.style.display === 'block';
+  d.style.display = vis ? 'none' : 'block';
+  el.textContent = vis ? '+ ver coberturas' : '– ocultar coberturas';
+}
+
+function seleccionar(asegId, asegNombre, planId, planNombre, primaTotal, ventajaTexto, ventajaTipo) {
+  const plan = ASEGURADORAS.flatMap(a=>a.planes).find(p=>p.id===planId);
+  seleccion = { asegId, asegNombre, planId, planNombre, primaTotal, ventajaTexto, ventajaTipo, plan };
+  document.querySelectorAll('.aseg-card').forEach(c=>c.classList.remove('highlighted'));
+  document.getElementById('card-'+asegId).classList.add('highlighted');
+
+  const primaIva = primaTotal*(1+IVA);
+  const mes = primaIva/12;
+  document.getElementById('resumen-final').innerHTML = `
+    <div class="resumen-row"><span>Cliente</span><span>${datosCliente.nombre}</span></div>
+    <div class="resumen-row"><span>Cédula</span><span>${datosCliente.cedula}</span></div>
+    <div class="resumen-row"><span>Vehículo</span><span>${datosCliente.marca} ${datosCliente.modelo} ${datosCliente.anio}</span></div>
+    <div class="resumen-row"><span>Placa</span><span>${datosCliente.placa}</span></div>
+    <div class="resumen-row"><span>Valor asegurado</span><span>$${datosCliente.valor.toLocaleString()}</span></div>
+    <div class="resumen-row"><span>Aseguradora</span><span>${asegNombre}</span></div>
+    <div class="resumen-row"><span>Plan</span><span>${planNombre}</span></div>
+    <div class="resumen-row"><span>Punto fuerte</span><span>${ventajaTexto}</span></div>
+    <div class="resumen-row" style="margin-top:8px;padding-top:12px;border-top:2px solid #f0e0f7">
+      <span style="font-weight:600">Prima total (con IVA)</span>
+      <span class="resumen-total">$${primaIva.toLocaleString('es-EC',{minimumFractionDigits:2})}</span>
+    </div>
+    <div class="resumen-row">
+      <span>Cuota mensual × 12 sin intereses</span>
+      <span class="resumen-mes">$${mes.toLocaleString('es-EC',{minimumFractionDigits:2})}/mes</span>
+    </div>`;
+  irPaso(3);
+}
+
+async function generarPDF() {
+  if (!seleccion) return;
+  document.getElementById('loading').classList.remove('hidden');
+  const plan = seleccion.plan;
+  const payload = {
+    ...datosCliente,
+    planes: [{
+      aseguradora: seleccion.asegNombre,
+      plan: seleccion.planNombre,
+      ventaja_texto: seleccion.ventajaTexto,
+      ventaja_tipo: seleccion.ventajaTipo,
+      recomendado: true,
+      rc: plan.rc, parcial: plan.parcial, total: plan.total,
+      auto_sust: plan.auto_sust,
+      prima_total: seleccion.primaTotal,
+      deducible_corto: plan.deducible_corto,
+      deducible: plan.deducible,
+      asistencias: plan.asistencias,
+      coberturas: plan.coberturas,
+    }]
+  };
+  try {
+    const resp = await fetch('/generar-pdf', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify(payload)
+    });
+    const blob = await resp.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `propuesta_${datosCliente.placa.replace(/[^a-zA-Z0-9]/g,'')}.pdf`;
+    a.click();
+    URL.revokeObjectURL(url);
+  } catch(e) {
+    alert('Error al generar el PDF. Por favor intenta de nuevo.');
+  } finally {
+    document.getElementById('loading').classList.add('hidden');
+  }
+}
+</script>
+</body>
+</html>
