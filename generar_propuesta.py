@@ -19,7 +19,24 @@ WHITE   = colors.white
 W, H    = A4  # 595.28 x 841.89 pt
 
 # ── Configuración editable ───────────────────────────────────────────────────
-TASA_IVA = 0.15  # Cambiar aquí cuando cambie la tasa (ej: 0.12, 0.15)
+TASA_IVA   = 0.15   # Cambiar aquí cuando cambie la tasa
+PCT_SCVS   = 0.035  # Superintendencia de Bancos
+PCT_CAMP   = 0.005  # Seguro Campesino
+
+def calcular_prima(prima_neta):
+    scvs    = prima_neta * PCT_SCVS
+    camp    = prima_neta * PCT_CAMP
+    if prima_neta <= 250:    emision = 0.50
+    elif prima_neta <= 500:  emision = 1.00
+    elif prima_neta <= 1000: emision = 3.00
+    elif prima_neta <= 2000: emision = 5.00
+    elif prima_neta <= 4000: emision = 7.00
+    else:                    emision = 9.00
+    base  = prima_neta + scvs + camp + emision
+    iva   = base * TASA_IVA
+    total = base + iva
+    return dict(prima_neta=prima_neta, scvs=scvs, camp=camp,
+                emision=emision, base=base, iva=iva, total=total)
 
 BADGE_COLORS = {
     'economico':    (colors.HexColor('#E8F5E9'), colors.HexColor('#2E7D32')),
@@ -40,7 +57,7 @@ def E():
         'prima_xl':   ParagraphStyle('px', fontName='Helvetica-Bold',    fontSize=16, textColor=PURPLE, leading=20),
         'prima_md':   ParagraphStyle('pm', fontName='Helvetica-Bold',    fontSize=9.5,textColor=DGRAY,  leading=12),
         'plan_tit':   ParagraphStyle('pt', fontName='Helvetica-Bold',    fontSize=11, textColor=BLACK,  leading=14),
-        'plan_aseg':  ParagraphStyle('pa', fontName='Helvetica',         fontSize=8,  textColor=PURPLE, leading=11),
+        'plan_aseg':  ParagraphStyle('pa', fontName='Helvetica-Bold',    fontSize=13, textColor=PURPLE, leading=16),
         'lbl':        ParagraphStyle('l',  fontName='Helvetica',         fontSize=7.5,textColor=GRAY,   leading=11),
         'dato':       ParagraphStyle('d',  fontName='Helvetica-Bold',    fontSize=7.5,textColor=BLACK,  leading=11),
     }
@@ -176,7 +193,7 @@ def pagina_resumen(story, datos, e, doc):
     ]
     filas = [hdr_row]
     for p in planes:
-        mes = p['prima_total'] * (1 + p.get('tasa_iva', TASA_IVA)) / 12
+        mes = calcular_prima(p['prima_total'])['total'] / 12
         aseg_plan = Table([
             [Paragraph(p['aseguradora'], e['tabla_gray'])],
             [Paragraph(p['plan'], e['tabla_bold'])],
@@ -192,7 +209,7 @@ def pagina_resumen(story, datos, e, doc):
             Paragraph('✓' if p.get('parcial') else '–', e['tabla_bold']),
             Paragraph('✓' if p.get('total') else '–', e['tabla_bold']),
             Paragraph(p.get('auto_sust','–'), e['tabla_cel']),
-            Paragraph(f"$ {p['prima_total']:,.2f}", e['tabla_bold']),
+            Paragraph(f"$ {calcular_prima(p['prima_total'])['total']:,.2f}", e['tabla_bold']),
             Paragraph(f"$ {mes:,.2f}", e['tabla_cel']),
         ])
 
@@ -255,19 +272,43 @@ def pagina_detalle(story, plan, e, doc):
     contenido.append(Spacer(1, 3*mm))
 
     # — Bloque primas —
-    mes = plan['prima_total'] / 12  # cuota 12 meses sin intereses
-    tasa = plan.get('tasa_iva', TASA_IVA)
-    prima_con_iva = plan['prima_total'] * (1 + tasa)
+    c = calcular_prima(plan['prima_total'])
+    prima_con_iva = c['total']
     mes_con_iva = prima_con_iva / 12
+
+    # Tabla desglose de costos
+    desglose_data = [
+        [Paragraph('Concepto', e['tabla_hdr']), Paragraph('Valor', e['tabla_hdr'])],
+        [Paragraph('Prima neta', e['tabla_cel']),           Paragraph(f"$ {c['prima_neta']:,.2f}", e['tabla_bold'])],
+        [Paragraph('SCVS (3.5%)', e['tabla_cel']),          Paragraph(f"$ {c['scvs']:,.2f}", e['tabla_bold'])],
+        [Paragraph('Seguro Campesino (0.5%)', e['tabla_cel']),Paragraph(f"$ {c['camp']:,.2f}", e['tabla_bold'])],
+        [Paragraph('Derechos de emisión', e['tabla_cel']),  Paragraph(f"$ {c['emision']:,.2f}", e['tabla_bold'])],
+        [Paragraph('Base imponible IVA', e['tabla_cel']),   Paragraph(f"$ {c['base']:,.2f}", e['tabla_bold'])],
+        [Paragraph('IVA (15%)', e['tabla_cel']),            Paragraph(f"$ {c['iva']:,.2f}", e['tabla_bold'])],
+        [Paragraph('Prima total', ParagraphStyle('pt2', fontName='Helvetica-Bold', fontSize=9, textColor=PURPLE, leading=12)),
+         Paragraph(f"$ {c['total']:,.2f}", ParagraphStyle('pv2', fontName='Helvetica-Bold', fontSize=11, textColor=PURPLE, leading=14))],
+    ]
+    tbl_desglose = Table(desglose_data, colWidths=[doc.width*0.65, doc.width*0.35])
+    tbl_desglose.setStyle(TableStyle([
+        ('BACKGROUND',(0,0),(-1,0), BLACK),
+        ('ROWBACKGROUNDS',(0,1),(-1,-2),[WHITE,LGRAY]),
+        ('BACKGROUND',(0,-1),(-1,-1), colors.HexColor('#f3e5f5')),
+        ('TOPPADDING',(0,0),(-1,-1),4),('BOTTOMPADDING',(0,0),(-1,-1),4),
+        ('LEFTPADDING',(0,0),(-1,-1),6),('RIGHTPADDING',(0,0),(-1,-1),6),
+        ('LINEBELOW',(0,0),(-1,-1),0.3,GRAY),
+        ('ALIGN',(1,0),(1,-1),'RIGHT'),
+    ]))
+    contenido.append(tbl_desglose)
+    contenido.append(Spacer(1, 2*mm))
+
+    # Cuota mensual destacada
     tbl_p = Table([[
-        Paragraph('Prima neta anual', e['lbl']),
-        Paragraph(f'Cuota mensual (12x sin intereses)', e['lbl']),
+        Paragraph('Cuota mensual × 12 sin intereses', e['lbl']),
         Paragraph('Deducible parcial', e['lbl']),
     ],[
-        Paragraph(f"$ {plan['prima_total']:,.2f}", e['prima_xl']),
-        Paragraph(f"$ {mes_con_iva:,.2f}", e['prima_md']),
+        Paragraph(f"$ {mes_con_iva:,.2f}/mes", e['prima_xl']),
         Paragraph(plan.get('deducible_corto','—'), e['prima_md']),
-    ]], colWidths=[doc.width*0.34]*3)
+    ]], colWidths=[doc.width*0.60, doc.width*0.40])
     tbl_p.setStyle(TableStyle([
         ('BACKGROUND',(0,0),(-1,-1),LGRAY),
         ('TOPPADDING',(0,0),(-1,-1),5),('BOTTOMPADDING',(0,0),(-1,-1),5),
@@ -324,7 +365,7 @@ def pagina_detalle(story, plan, e, doc):
 
 # ── Función principal ─────────────────────────────────────────────────────────
 def generar_pdf(datos, output_path):
-    logo_path = '/home/claude/logo.png'
+    logo_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'logo.png')
     e = E()
     doc = SimpleDocTemplate(output_path, pagesize=A4,
         leftMargin=14*mm, rightMargin=14*mm,
