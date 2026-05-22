@@ -77,6 +77,7 @@
   .badge-deducible    { background: #E3F2FD; color: #1565C0; }
   .badge-flexibilidad { background: #FFF8E1; color: #E65100; }
   .badge-tecnologia   { background: #E0F7FA; color: #00695C; }
+  .badge-blue         { background: #E3F2FD; color: #1565C0; }
 
   /* Vehículo resumen pill */
   .vehiculo-pill { display: inline-flex; gap: 16px; background: #f9f0fb; border: 1px solid #e8c9ef; border-radius: 8px; padding: 8px 16px; margin-bottom: 16px; font-size: 13px; flex-wrap: wrap; }
@@ -147,8 +148,10 @@
   <div id="paso2" class="hidden">
     <div id="vehiculo-pill-wrap"></div>
     <div id="aseguradoras-wrap"></div>
-    <div class="actions">
+    <div class="actions" style="align-items:center">
       <button class="btn" onclick="irPaso(1)">← Editar datos</button>
+      <span id="contador-sel" style="font-size:13px;color:#888;margin-right:auto;margin-left:8px">Ningún plan seleccionado</span>
+      <button class="btn btn-primary" id="btn-ver-resumen" onclick="verResumen()" style="display:none">Ver resumen →</button>
     </div>
   </div>
 
@@ -175,7 +178,28 @@
 </div>
 
 <script>
-const IVA = 0.15;
+const IVA       = 0.15;
+const PCT_SCVS  = 0.035;
+const PCT_CAMP  = 0.005;
+
+function derechosEmision(primaNeta) {
+  if (primaNeta <=  250) return 0.50;
+  if (primaNeta <=  500) return 1.00;
+  if (primaNeta <= 1000) return 3.00;
+  if (primaNeta <= 2000) return 5.00;
+  if (primaNeta <= 4000) return 7.00;
+  return 9.00;
+}
+
+function calcularPrima(primaNeta) {
+  const scvs    = primaNeta * PCT_SCVS;
+  const camp    = primaNeta * PCT_CAMP;
+  const emision = derechosEmision(primaNeta);
+  const base    = primaNeta + scvs + camp + emision;
+  const iva     = base * IVA;
+  const total   = base + iva;
+  return { primaNeta, scvs, camp, emision, base, iva, total };
+}
 
 const ASEGURADORAS = [
   {
@@ -228,6 +252,63 @@ const ASEGURADORAS = [
     planes:[
       {id:'equi-full', nombre:'Autoseguro Amparo Patrimonial', desc:'Full cobertura · RC $80k · amparo patrimonial', ventaja_texto:'RC más alta: $80.000', ventaja_tipo:'cobertura', prima_total:864.57, rc:'$80.000', parcial:true, total:true, auto_sust:'10/20 días', deducible_corto:'Taller convenio mín $200', deducible:'Taller convenio: 10%/1%VA/mín $200. Concesionario ≤2 años: mín $350. Concesionario >2 años: mín $400. Sin convenio: mín $400. Robo sin disp. >$30k: 20% VA.', asistencias:'Conductor profesional sin límite · Ambulancia sin límite · Grúa 24/7 200km/3 eventos · Asistencia legal in situ · Reemplazo de llaves máx $200 · Gastos exequiales titular · Médica telefónica 24/7.', coberturas:[['RC – daños a terceros','$80.000'],['Pérdida parcial/total por choque','Incluido'],['Pérdida parcial/total por robo','Incluido'],['Gastos médicos por ocupante','$3.000'],['Muerte accidental por ocupante','$5.000'],['Amparo patrimonial','Incluido'],['Auto sustituto parciales (> $1.300)','10 días'],['Auto sustituto totales','20 días'],['Reemplazo de llaves por robo','máx $200'],['Gastos exequiales titular','Incluido'],['Asistencia médica 24/7','Incluido']]}
     ]
+  },
+  {
+    id:'aigcorp', nombre:'PRODUCTO CORPORATIVO HEH-AIG', badge:'Flota empresarial', badgeClass:'badge-blue',
+    planes:[
+      {
+        id:'aigcorp-tr', nombre:'Todo Riesgo – hasta 16 años',
+        desc:'Vehículos hasta 16 años · Tasa 2.80% (<$35k) o 2.30% (≥$35k) sobre valor asegurado',
+        ventaja_texto:'Cobertura corporativa completa', ventaja_tipo:'cobertura',
+        prima_total:0,
+        rc:'$50.000', parcial:true, total:true, auto_sust:'15/20 días',
+        deducible_corto:'<$35k: mín $250 · ≥$35k: mín $350',
+        deducible:'Pérdidas parciales vehículos <$35.000: 10% siniestro / 1% VA / mín $250.  Vehículos ≥$35.000: 10% siniestro / 1% VA / mín $350.  Pérdida total por daños: 15% VA.  Pérdida total por robo: 15% sin dispositivo / 10% con dispositivo (<$20k) · 20% sin dispositivo / 10% con dispositivo (>$20k).',
+        asistencias:'Asistencias vehiculares 24/7 · Grúa · Auxilio mecánico · Ángel Guardián · Asistencia legal · No cobro R.A.S.A.',
+        coberturas:[
+          ['Responsabilidad civil – LUC','$50.000'],
+          ['Pérdida parcial del vehículo por daños','$24.000'],
+          ['Pérdida total del vehículo por daños','$24.000'],
+          ['Pérdida parcial del vehículo por robo','$24.000'],
+          ['Pérdida total del vehículo por robo','$24.000'],
+          ['Gastos médicos por ocupante','$3.000'],
+          ['Accidentes personales por ocupante','$5.000'],
+          ['Gasto de grúa por accidente','$200'],
+          ['Amparo jurídico en proceso penal','$1.000'],
+          ['Muerte accidental / Incapacidad total','$10.000'],
+          ['Llave protegida','$150'],
+          ['Documentos protegidos','$100'],
+          ['Auto sustituto – pérdidas parciales','15 días (siniestro > $1.000 + IVA)'],
+          ['Auto sustituto – pérdidas totales','20 días'],
+          ['Amparo patrimonial','$24.000'],
+          ['PractiAuto (talleres designados)','Opcional + $51'],
+        ]
+      },
+      {
+        id:'aigcorp-pt', nombre:'Pérdida Total – 16 a 20 años',
+        desc:'Vehículos de 16 a 20 años de antigüedad · Tasa 2.60% sobre valor asegurado',
+        ventaja_texto:'Protección pérdida total', ventaja_tipo:'deducible',
+        prima_total:0,
+        rc:'$50.000', parcial:false, total:true, auto_sust:'20 días',
+        deducible_corto:'Total daños: 15% VA',
+        deducible:'Pérdida total por daños: 15% VA.  Pérdida total por robo: 15% sin dispositivo / 10% con dispositivo (<$20k) · 20% sin dispositivo / 10% con dispositivo (>$20k).  Pérdidas parciales: NO APLICA.',
+        asistencias:'Asistencias vehiculares 24/7 · Grúa · Auxilio mecánico · Ángel Guardián · Asistencia legal.',
+        coberturas:[
+          ['Responsabilidad civil – LUC','$50.000'],
+          ['Pérdida total del vehículo por daños','$24.000'],
+          ['Pérdida total del vehículo por robo','$24.000'],
+          ['Gastos médicos por ocupante','$3.000'],
+          ['Accidentes personales por ocupante','$5.000'],
+          ['Gasto de grúa por accidente','$200'],
+          ['Amparo jurídico en proceso penal','$1.000'],
+          ['Muerte accidental / Incapacidad total','$10.000'],
+          ['Llave protegida','$150'],
+          ['Documentos protegidos','$100'],
+          ['Auto sustituto – pérdidas totales','20 días'],
+          ['Amparo patrimonial','$24.000'],
+        ]
+      }
+    ]
   }
 ];
 
@@ -274,20 +355,45 @@ function irPaso2() {
   wrap.innerHTML = '';
   ASEGURADORAS.forEach(aseg => {
     const planesHTML = aseg.planes.map(p => {
-      const cobHTML = p.coberturas.map(c=>`<tr><td>${c[0]}</td><td>${c[1]}</td></tr>`).join('');
+      const valorFmt = datosCliente.valor > 0
+        ? '$' + datosCliente.valor.toLocaleString('es-EC', {minimumFractionDigits:3, maximumFractionDigits:3})
+        : '$24.000';
+      const coberturas = p.coberturas.map(c => [c[0], c[1].replace('$24.000', valorFmt)]);
+      const cobHTML = coberturas.map(c=>`<tr><td>${c[0]}</td><td>${c[1]}</td></tr>`).join('');
+      const primaBase = p.prima_total;
+      const pctBase = datosCliente.valor > 0 ? ((primaBase / datosCliente.valor) * 100).toFixed(4) : '0';
       return `
-        <div class="plan-row" id="planrow-${p.id}">
+        <div class="plan-row" id="planrow-${p.id}" style="grid-template-columns:1fr auto auto auto">
           <div>
             <div class="plan-nombre">${p.nombre}</div>
             <div class="plan-desc">${p.desc}</div>
             <div class="plan-ded">Ded.: ${p.deducible_corto}</div>
           </div>
-          <div style="text-align:right">
-            <div class="prima-anual">${fmtPrima(p.prima_total)}</div>
-            <div class="prima-mes">${fmtMes(p.prima_total)}/mes × 12</div>
+          <div style="display:flex;flex-direction:column;gap:6px;min-width:220px">
+            <div style="display:flex;align-items:center;gap:6px">
+              <label style="font-size:11px;color:#888;white-space:nowrap;width:90px">% prima neta:</label>
+              <input type="number" id="pct-${p.id}" value="${pctBase}" step="0.0001" min="0" max="100"
+                style="width:80px;font-size:12px;padding:3px 6px;border:1px solid #ddd;border-radius:6px;text-align:right"
+                oninput="recalcPorPct('${p.id}', ${datosCliente.valor || 0})">
+              <span style="font-size:11px;color:#888">%</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:6px">
+              <label style="font-size:11px;color:#888;white-space:nowrap;width:90px">Prima neta $:</label>
+              <input type="number" id="prima-${p.id}" value="${primaBase.toFixed(2)}" step="0.01" min="0"
+                style="width:80px;font-size:12px;padding:3px 6px;border:1px solid #ddd;border-radius:6px;text-align:right"
+                oninput="recalcPorPrima('${p.id}', ${datosCliente.valor || 0})">
+            </div>
+            <div style="text-align:right">
+              <span id="display-anual-${p.id}" style="font-size:15px;font-weight:700;color:#a955b3">${fmtPrima(primaBase)}</span>
+              <span style="font-size:11px;color:#888"> c/IVA</span><br>
+              <span id="display-mes-${p.id}" style="font-size:11px;color:#666">${fmtMes(primaBase)}/mes × 12</span>
+            </div>
           </div>
           <span class="aseg-badge ${p.ventaja_tipo ? 'badge-'+p.ventaja_tipo : ''}" style="font-size:11px">${p.ventaja_texto}</span>
-          <button class="btn-select" onclick="seleccionar('${aseg.id}','${aseg.nombre}','${p.id}','${p.nombre}',${p.prima_total},'${p.ventaja_texto}','${p.ventaja_tipo}')">Seleccionar</button>
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;color:#185FA5;font-weight:600">
+            <input type="checkbox" id="chk-${p.id}" data-aseg-id="${aseg.id}" data-aseg-nombre="${aseg.nombre}" data-plan-id="${p.id}" data-plan-nombre="${p.nombre}" data-prima="${primaBase}" data-ventaja-texto="${p.ventaja_texto}" data-ventaja-tipo="${p.ventaja_tipo}" onchange="actualizarSeleccion()" style="width:16px;height:16px;accent-color:#a955b3;cursor:pointer">
+            Incluir
+          </label>
         </div>
         <span class="cob-toggle" onclick="toggleCob('cob-${p.id}',this)">+ ver coberturas</span>
         <div class="cob-detail" id="cob-${p.id}">
@@ -308,6 +414,29 @@ function irPaso2() {
   irPaso(2);
 }
 
+function recalcPorPct(planId, valorAsegurado) {
+  const pct = parseFloat(document.getElementById('pct-'+planId).value) || 0;
+  const prima = valorAsegurado > 0 ? (pct / 100) * valorAsegurado : 0;
+  document.getElementById('prima-'+planId).value = prima.toFixed(2);
+  actualizarDisplay(planId, prima);
+  document.getElementById('chk-'+planId).dataset.prima = prima;
+}
+
+function recalcPorPrima(planId, valorAsegurado) {
+  const prima = parseFloat(document.getElementById('prima-'+planId).value) || 0;
+  const pct = valorAsegurado > 0 ? ((prima / valorAsegurado) * 100).toFixed(4) : '0';
+  document.getElementById('pct-'+planId).value = pct;
+  actualizarDisplay(planId, prima);
+  document.getElementById('chk-'+planId).dataset.prima = prima;
+}
+
+function actualizarDisplay(planId, prima) {
+  const c = calcularPrima(prima);
+  document.getElementById('display-anual-'+planId).textContent =
+    '$' + c.total.toLocaleString('es-EC', {minimumFractionDigits:2, maximumFractionDigits:2});
+  document.getElementById('display-mes-'+planId).textContent =
+    '$' + (c.total/12).toLocaleString('es-EC', {minimumFractionDigits:2, maximumFractionDigits:2}) + '/mes × 12';
+}
 function toggleCob(id, el) {
   const d = document.getElementById(id);
   const vis = d.style.display === 'block';
@@ -315,55 +444,86 @@ function toggleCob(id, el) {
   el.textContent = vis ? '+ ver coberturas' : '– ocultar coberturas';
 }
 
-function seleccionar(asegId, asegNombre, planId, planNombre, primaTotal, ventajaTexto, ventajaTipo) {
-  const plan = ASEGURADORAS.flatMap(a=>a.planes).find(p=>p.id===planId);
-  seleccion = { asegId, asegNombre, planId, planNombre, primaTotal, ventajaTexto, ventajaTipo, plan };
-  document.querySelectorAll('.aseg-card').forEach(c=>c.classList.remove('highlighted'));
-  document.getElementById('card-'+asegId).classList.add('highlighted');
+function actualizarSeleccion() {
+  const checks = document.querySelectorAll('input[type=checkbox][data-plan-id]:checked');
+  const n = checks.length;
+  const contador = document.getElementById('contador-sel');
+  const btnResumen = document.getElementById('btn-ver-resumen');
+  if (n === 0) {
+    contador.textContent = 'Ningún plan seleccionado';
+    btnResumen.style.display = 'none';
+  } else {
+    contador.textContent = `${n} plan${n>1?'es':''} seleccionado${n>1?'s':''}`;
+    btnResumen.style.display = 'block';
+  }
+}
 
-  const primaIva = primaTotal*(1+IVA);
-  const mes = primaIva/12;
-  document.getElementById('resumen-final').innerHTML = `
+function verResumen() {
+  const checks = document.querySelectorAll('input[type=checkbox][data-plan-id]:checked');
+  if (checks.length === 0) return;
+
+  let html = `
     <div class="resumen-row"><span>Cliente</span><span>${datosCliente.nombre}</span></div>
     <div class="resumen-row"><span>Cédula</span><span>${datosCliente.cedula}</span></div>
     <div class="resumen-row"><span>Vehículo</span><span>${datosCliente.marca} ${datosCliente.modelo} ${datosCliente.anio}</span></div>
     <div class="resumen-row"><span>Placa</span><span>${datosCliente.placa}</span></div>
     <div class="resumen-row"><span>Valor asegurado</span><span>$${datosCliente.valor.toLocaleString()}</span></div>
-    <div class="resumen-row"><span>Aseguradora</span><span>${asegNombre}</span></div>
-    <div class="resumen-row"><span>Plan</span><span>${planNombre}</span></div>
-    <div class="resumen-row"><span>Punto fuerte</span><span>${ventajaTexto}</span></div>
-    <div class="resumen-row" style="margin-top:8px;padding-top:12px;border-top:2px solid #f0e0f7">
-      <span style="font-weight:600">Prima total (con IVA)</span>
-      <span class="resumen-total">$${primaIva.toLocaleString('es-EC',{minimumFractionDigits:2})}</span>
-    </div>
-    <div class="resumen-row">
-      <span>Cuota mensual × 12 sin intereses</span>
-      <span class="resumen-mes">$${mes.toLocaleString('es-EC',{minimumFractionDigits:2})}/mes</span>
-    </div>`;
+    <div style="border-top:2px solid #f0e0f7;margin-top:10px;padding-top:10px">`;
+
+  checks.forEach(chk => {
+    const prima = parseFloat(chk.dataset.prima);
+    const c = calcularPrima(prima);
+    html += `
+      <div class="resumen-row" style="margin-top:8px">
+        <span style="font-weight:600">${chk.dataset.asegNombre}</span>
+        <span style="font-size:12px;color:#a955b3">${chk.dataset.planNombre}</span>
+      </div>
+      <div class="resumen-row"><span>Prima neta</span><span>$${c.primaNeta.toLocaleString('es-EC',{minimumFractionDigits:2})}</span></div>
+      <div class="resumen-row"><span>SCVS (3.5%)</span><span>$${c.scvs.toLocaleString('es-EC',{minimumFractionDigits:2})}</span></div>
+      <div class="resumen-row"><span>Seguro Campesino (0.5%)</span><span>$${c.camp.toLocaleString('es-EC',{minimumFractionDigits:2})}</span></div>
+      <div class="resumen-row"><span>Derechos de emisión</span><span>$${c.emision.toFixed(2)}</span></div>
+      <div class="resumen-row"><span>Base imponible IVA</span><span>$${c.base.toLocaleString('es-EC',{minimumFractionDigits:2})}</span></div>
+      <div class="resumen-row"><span>IVA (15%)</span><span>$${c.iva.toLocaleString('es-EC',{minimumFractionDigits:2})}</span></div>
+      <div class="resumen-row" style="border-top:1px solid #e0c0f0;margin-top:4px;padding-top:6px">
+        <span style="font-weight:600">Prima total</span>
+        <span class="resumen-total" style="font-size:16px">$${c.total.toLocaleString('es-EC',{minimumFractionDigits:2})}</span>
+      </div>
+      <div class="resumen-row" style="margin-bottom:12px;border-bottom:1px solid #f0f0f0;padding-bottom:10px">
+        <span>Cuota mensual × 12 sin intereses</span>
+        <span class="resumen-mes">$${(c.total/12).toLocaleString('es-EC',{minimumFractionDigits:2})}/mes</span>
+      </div>`;
+  });
+  html += '</div>';
+
+  document.getElementById('resumen-final').innerHTML = html;
   irPaso(3);
 }
 
 async function generarPDF() {
-  if (!seleccion) return;
+  const checks = document.querySelectorAll('input[type=checkbox][data-plan-id]:checked');
+  if (checks.length === 0) return;
   document.getElementById('loading').classList.remove('hidden');
-  const plan = seleccion.plan;
-  const payload = {
-    ...datosCliente,
-    planes: [{
-      aseguradora: seleccion.asegNombre,
-      plan: seleccion.planNombre,
-      ventaja_texto: seleccion.ventajaTexto,
-      ventaja_tipo: seleccion.ventajaTipo,
-      recomendado: true,
+
+  const planesSeleccionados = Array.from(checks).map((chk, idx) => {
+    const plan = ASEGURADORAS.flatMap(a=>a.planes).find(p=>p.id===chk.dataset.planId);
+    return {
+      aseguradora: chk.dataset.asegNombre,
+      plan: chk.dataset.planNombre,
+      ventaja_texto: chk.dataset.ventajaTexto,
+      ventaja_tipo: chk.dataset.ventajaTipo,
+      recomendado: idx === 0,
       rc: plan.rc, parcial: plan.parcial, total: plan.total,
       auto_sust: plan.auto_sust,
-      prima_total: seleccion.primaTotal,
+      prima_total: parseFloat(chk.dataset.prima),
       deducible_corto: plan.deducible_corto,
       deducible: plan.deducible,
       asistencias: plan.asistencias,
-      coberturas: plan.coberturas,
-    }]
-  };
+      coberturas: plan.coberturas.map(c => [c[0], c[1].replace('$24.000',
+        '$' + datosCliente.valor.toLocaleString('es-EC', {minimumFractionDigits:3, maximumFractionDigits:3}))]),
+    };
+  });
+
+  const payload = { ...datosCliente, planes: planesSeleccionados };
   try {
     const resp = await fetch('/generar-pdf', {
       method: 'POST',
