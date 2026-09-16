@@ -78,6 +78,7 @@
   .badge-flexibilidad { background: #FFF8E1; color: #E65100; }
   .badge-tecnologia   { background: #E0F7FA; color: #00695C; }
   .badge-blue         { background: #E3F2FD; color: #1565C0; }
+  .badge-teal         { background: #E0F2F1; color: #00695C; }
 
   /* Vehículo resumen pill */
   .vehiculo-pill { display: inline-flex; gap: 16px; background: #f9f0fb; border: 1px solid #e8c9ef; border-radius: 8px; padding: 8px 16px; margin-bottom: 16px; font-size: 13px; flex-wrap: wrap; }
@@ -308,7 +309,80 @@ const ASEGURADORAS = [
           ['Amparo patrimonial','$24.000'],
         ]
       }
+  },
+  {
+    id:'atlantida', nombre:'Seguros Atlántida', badge:'3 planes', badgeClass:'badge-teal',
+    planes:[
+      {
+        id:'atl-basico', nombre:'Plan Básico',
+        desc:'Solo pérdida total · RC $20.000 · Sin cobertura parcial',
+        ventaja_texto:'Entrada económica', ventaja_tipo:'economico',
+        prima_total:0,
+        rc:'$20.000', parcial:false, total:true, auto_sust:'No incluye',
+        deducible_corto:'Total accidente: 15%VA · Robo: 15-20%VA',
+        deducible:'Pérdida total por accidente: 15% VA. Pérdida total por robo: hasta $30.000 → 15% VA (con o sin dispositivo). Mayor a $30.001 → 20% VA.',
+        asistencias:'Asistencia vehicular · Conductor elegido · Pet Assistance · Asistencia internacional en viajes.',
+        coberturas:[
+          ['Responsabilidad civil – LUC','$20.000'],
+          ['Pérdida total del vehículo por accidente','$24.000'],
+          ['Pérdida total del vehículo por robo','$24.000'],
+          ['Muerte accidental por ocupante (máx 5)','$5.000'],
+          ['Coberturas adicionales CAN','RC excluida'],
+          ['Accesorios extras','hasta 20%'],
+        ]
+      },
+      {
+        id:'atl-medio', nombre:'Plan Medio',
+        desc:'Todo riesgo · RC $45.000 · Gastos médicos · Auto sustituto 30 días',
+        ventaja_texto:'Mejor relación precio/cobertura', ventaja_tipo:'cobertura',
+        prima_total:0,
+        rc:'$45.000', parcial:true, total:true, auto_sust:'30 días',
+        deducible_corto:'Parcial mín $300-$350 según VA',
+        deducible:'Pérdida parcial: hasta $15.000 → mín $350 (10%VS/1%VA, el mayor). Mayor $15.001 → mín $300. Total accidente: 15%VA. Total robo: hasta $30.000 → 15%VA. Mayor $30.001 → 20%VA.',
+        asistencias:'Remolque 300km · Auxilio vial · Ambulancia sin límite · Conductor elegido (Quito, GYE, Cuenca y más) · Pet Assistance · Asistencia internacional en viajes · Mi tramitador personal.',
+        coberturas:[
+          ['Responsabilidad civil – LUC','$45.000'],
+          ['Pérdida parcial del vehículo por daños','$24.000'],
+          ['Pérdida total del vehículo por accidente','$24.000'],
+          ['Pérdida parcial del vehículo por robo','$24.000'],
+          ['Pérdida total del vehículo por robo','$24.000'],
+          ['Muerte accidental por ocupante (máx 5)','$5.000'],
+          ['Gastos médicos por ocupante (máx 5)','$3.000'],
+          ['Auto sustituto (siniestro > $1.000)','30 días'],
+          ['Accesorios extras','hasta 20%'],
+          ['Circulación países CAN','RC excluida'],
+          ['Cobertura para airbags','Incluido'],
+        ]
+      },
+      {
+        id:'atl-full', nombre:'Plan Full – Producto ANA',
+        desc:'Todo riesgo premium · RC $65.000 · Coberturas adicionales completas',
+        ventaja_texto:'Mayor RC: $65.000', ventaja_tipo:'cobertura',
+        prima_total:0,
+        rc:'$65.000', parcial:true, total:true, auto_sust:'30 días',
+        deducible_corto:'Parcial mín $300-$350 según VA',
+        deducible:'Pérdida parcial: hasta $15.000 → mín $350 (10%VS/1%VA, el mayor). Mayor $15.001 → mín $300. Total accidente: 15%VA. Total robo: hasta $30.000 → 15%VA. Mayor $30.001 → 20%VA.',
+        asistencias:'Remolque 300km · Auxilio vial · Ambulancia sin límite · Conductor elegido · Pet Assistance · Asistencia internacional · Mi tramitador personal · Grúa $300 · Ambulancia $300 · Gastos legales $200.',
+        coberturas:[
+          ['Responsabilidad civil – LUC','$65.000'],
+          ['Pérdida parcial del vehículo por daños','$24.000'],
+          ['Pérdida total del vehículo por accidente','$24.000'],
+          ['Pérdida parcial del vehículo por robo','$24.000'],
+          ['Pérdida total del vehículo por robo','$24.000'],
+          ['Muerte accidental por ocupante (máx 5)','$5.000'],
+          ['Gastos médicos por ocupante (máx 5)','$3.000'],
+          ['Auto sustituto (siniestro > $1.000)','30 días parcial y total'],
+          ['Gastos de grúa (exceso asistencia)','$300 reembolso'],
+          ['Gastos de ambulancia (exceso asistencia)','$300 reembolso'],
+          ['Gastos legales (exceso asistencia)','$200 reembolso'],
+          ['Accesorios extras','hasta 20%'],
+          ['Circulación países CAN','RC excluida'],
+          ['Cobertura para airbags','Incluido'],
+          ['Amparo patrimonial','Opcional'],
+        ]
+      }
     ]
+  }
   }
 ];
 
